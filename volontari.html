@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Volontari per materia</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#eef2f4;--card:#fff;--ink:#14262e;--mute:#5d7078;--acc:#0e7c86;--acc2:#e3a72f;--line:#d3dde1;--chip:#dff0f1}
+@media(prefers-color-scheme:dark){:root{--bg:#0f1b20;--card:#172a31;--ink:#e8f1f3;--mute:#93a9b1;--acc:#3fc1cc;--acc2:#e3a72f;--line:#2a424b;--chip:#1f3f46}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Bricolage Grotesque",system-ui,sans-serif;padding:max(16px,env(safe-area-inset-top)) 16px 40px}
+.wrap{max-width:640px;margin:0 auto}
+h1{font-size:1.7rem;font-weight:800;margin:8px 0 2px}
+.sub{color:var(--mute);margin:0 0 16px}
+#days{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;position:sticky;top:0;background:var(--bg);z-index:2}
+#days button{flex:1 0 auto;min-width:52px;padding:8px 10px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+#days button b{display:block;font-size:1rem}
+#days button small{color:var(--mute)}
+#days button.on{background:var(--acc);border-color:var(--acc);color:#fff}
+#days button.on small{color:#e6f6f7}
+#list{display:grid;gap:10px;margin-top:12px}
+.m{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.mh{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mh h2{font-size:1.1rem;margin:0;font-weight:600}
+.add{border:0;background:var(--acc);color:#fff;border-radius:999px;padding:7px 14px;font:inherit;font-weight:600;cursor:pointer}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{background:var(--chip);border-radius:999px;padding:4px 6px 4px 12px;display:inline-flex;align-items:center;gap:6px}
+.chip.me{outline:2px solid var(--acc2)}
+.chip:not(.mine){padding-right:12px}
+.chip button{border:0;background:transparent;color:inherit;font-size:1.1rem;line-height:1;cursor:pointer;padding:0 4px}
+.empty{color:var(--mute);font-size:.9rem;margin-top:6px}
+dialog{border:0;border-radius:16px;padding:20px;width:min(92vw,360px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 12px}
+input{width:100%;font:inherit;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+.row{display:flex;gap:8px;margin-top:12px;justify-content:flex-end}
+.row button{font:inherit;padding:10px 16px;border-radius:10px;border:1px solid var(--line);background:transparent;color:var(--ink);cursor:pointer}
+.row button.ok{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+#st{position:fixed;left:50%;bottom:calc(16px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:8px 14px;border-radius:10px;font-size:.9rem;opacity:0;transition:opacity .2s;pointer-events:none}
+#st.show{opacity:1}
+@media(prefers-reduced-motion:reduce){#st{transition:none}}
+.m{border-left:6px solid hsl(var(--h) 60% 42%)}
+#vw{display:flex;gap:6px;margin-bottom:8px}
+#vw button{flex:1;padding:9px;border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;cursor:pointer}
+#vw button.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+table.g{width:100%;border-collapse:separate;border-spacing:0 6px}
+.g th{font-weight:600;color:var(--mute);font-size:.85rem;padding:0 2px}
+.g td.l{font-weight:600;font-size:.92rem;padding:0 6px 0 10px;background:var(--card);border-left:6px solid hsl(var(--h) 60% 42%);border-radius:8px 0 0 8px}
+.g td.c{text-align:center;padding:4px 2px;background:var(--card)}
+.g td.c:last-child{border-radius:0 8px 8px 0}
+.g td.c button{width:100%;min-width:34px;height:36px;border-radius:8px;border:0;font:inherit;font-weight:800;cursor:pointer;background:transparent;color:var(--mute)}
+.g td.c button.has{background:hsl(var(--h) 60% 42%);color:#fff}
+#wk{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+#wk button{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:10px;font:inherit;padding:8px 14px;cursor:pointer}
+#wk #wl{flex:1;text-align:center;font-weight:600}
+#days button{min-width:60px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Volontari per materia</h1>
+  <p class="sub">Scegli il giorno, poi tocca “Mi offro” sulla materia.</p>
+  <div id="wk"><button id="pv" aria-label="Settimana precedente">‹</button><span id="wl"></span><button id="nx" aria-label="Settimana successiva">›</button><button id="td">Oggi</button></div>
+  <div id="vw"><button data-v="d">Per giorno</button><button data-v="g">Riepilogo</button></div>
+  <nav id="days" aria-label="Giorni"></nav>
+  <main id="list"></main>
+</div>
+
+<dialog id="dlg">
+  <h3 id="dt"></h3>
+  <input id="nome" maxlength="40" placeholder="Nome e cognome" autocomplete="name">
+  <div class="row"><button id="no" type="button">Annulla</button><button id="si" class="ok" type="button">Salva</button></div>
+</dialog>
+<div id="st" role="status"></div>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyC91KfuUEAxHkoLqUUhckbVKXhIGpMnziA",
+  authDomain: "doushouqi-a23f3.firebaseapp.com",
+  databaseURL: "https://doushouqi-a23f3-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "doushouqi-a23f3",
+  storageBucket: "doushouqi-a23f3.firebasestorage.app",
+  messagingSenderId: "345961948789",
+  appId: "1:345961948789:web:a8faf2d41fd8ce8f607a3c"
+};
+firebase.initializeApp(firebaseConfig);
+// Nodo dedicato: non tocca i dati dell'altra app
+const NODO = "volontariMaterie";
+const root = firebase.database().ref(NODO);
+
+const MATERIE = [["latino","Latino",8],["italiano","Italiano",350],["fisica","Fisica",205],["filosofia","Filosofia",275],["matematica","Matematica",225],["scienze","Scienze",145],["educivica","Educazione civica",30],["arte","Arte",320],["greco","Greco",175]];
+const GIORNI = [["lun","Lun"],["mar","Mar"],["mer","Mer"],["gio","Gio"],["ven","Ven"]];
+const LS = (k,v)=>{try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}};
+let mine = new Set(JSON.parse(LS("vm_mine")||"[]"));
+function monday(d){const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const w=x.getDay();x.setDate(x.getDate()+(w===0?1:w===6?2:1-w));return x}
+let wk = monday(new Date());
+function dateOf(k){const i=GIORNI.findIndex(g=>g[0]===k);const x=new Date(wk);x.setDate(x.getDate()+i);return x}
+function dk(k){const x=dateOf(k);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")}
+const fmt=(d,o)=>d.toLocaleDateString("it-IT",o);
+function updWk(){const a=dateOf(GIORNI[0][0]),b=dateOf(GIORNI[GIORNI.length-1][0]);$("wl").textContent=fmt(a,{day:"numeric",month:"short"})+" – "+fmt(b,{day:"numeric",month:"short",year:"numeric"})}
+const _d = new Date().getDay();
+let giorno = LS("vm_giorno");
+if(!GIORNI.some(g=>g[0]===giorno)) giorno = GIORNI[(_d>=1 && _d<=5) ? _d-1 : 0][0];
+let vista = LS("vm_vista")==="g" ? "g" : "d";
+let data = {}, target = null;
+
+const $ = id => document.getElementById(id);
+function toast(t){const s=$("st");s.textContent=t;s.classList.add("show");setTimeout(()=>s.classList.remove("show"),2200)}
+
+function render(){
+  updWk();
+  const nav=$("days"); nav.innerHTML="";
+  GIORNI.forEach(([k,l])=>{
+    const n=MATERIE.reduce((a,[m])=>a+Object.keys(((data[dk(k)]||{})[m])||{}).length,0);
+    const b=document.createElement("button");
+    b.className=k===giorno?"on":"";
+    b.innerHTML="<b></b><small></small>";
+    b.firstChild.textContent=l+" "+dateOf(k).getDate(); b.lastChild.textContent=n?n+" nomi":"—";
+    b.onclick=()=>{giorno=k;LS("vm_giorno",k);render()};
+    nav.appendChild(b);
+  });
+  document.querySelectorAll("#vw button").forEach(b=>{b.className=b.dataset.v===vista?"on":"";b.onclick=()=>{vista=b.dataset.v;LS("vm_vista",vista);render()}});
+  nav.hidden = vista==="g";
+  const list=$("list"); list.innerHTML="";
+  if(vista==="g"){renderGrid(list);return}
+  MATERIE.forEach(([m,label,hue])=>{
+    const entries=Object.entries(((data[dk(giorno)]||{})[m])||{}).sort((a,b)=>(a[1].ts||0)-(b[1].ts||0));
+    const card=document.createElement("section"); card.className="m"; card.style.setProperty("--h",hue);
+    const h=document.createElement("div"); h.className="mh";
+    const t=document.createElement("h2"); t.textContent=label;
+    const a=document.createElement("button"); a.className="add"; a.textContent="Mi offro";
+    a.onclick=()=>openDlg(m,label);
+    h.append(t,a); card.appendChild(h);
+    if(!entries.length){const e=document.createElement("div");e.className="empty";e.textContent="Nessun volontario";card.appendChild(e)}
+    else{
+      const c=document.createElement("div"); c.className="chips";
+      entries.forEach(([id,v])=>{
+        const ch=document.createElement("span"); const own=mine.has(id);
+        ch.className="chip"+(own?" mine me":"");
+        const n=document.createElement("span"); n.textContent=v.nome; ch.appendChild(n);
+        if(own){const x=document.createElement("button");x.textContent="×";x.setAttribute("aria-label","Togli "+v.nome);x.onclick=()=>rimuovi(m,id);ch.appendChild(x)}
+        c.appendChild(ch);
+      });
+      card.appendChild(c);
+    }
+    list.appendChild(card);
+  });
+}
+
+function renderGrid(list){
+  const t=document.createElement("table"); t.className="g";
+  const hr=t.insertRow(); hr.appendChild(document.createElement("th"));
+  GIORNI.forEach(([k,l])=>{const th=document.createElement("th");th.textContent=l+" "+dateOf(k).getDate();hr.appendChild(th)});
+  MATERIE.forEach(([m,label,hue])=>{
+    const r=t.insertRow(); r.style.setProperty("--h",hue);
+    const c0=r.insertCell(); c0.className="l"; c0.textContent=label;
+    GIORNI.forEach(([k])=>{
+      const n=Object.keys(((data[dk(k)]||{})[m])||{}).length;
+      const c=r.insertCell(); c.className="c";
+      const b=document.createElement("button"); b.textContent=n||"·"; if(n)b.className="has";
+      b.setAttribute("aria-label",label+" "+k+": "+n+" volontari");
+      b.onclick=()=>{giorno=k;vista="d";LS("vm_giorno",k);LS("vm_vista","d");render();window.scrollTo(0,0)};
+      c.appendChild(b);
+    });
+  });
+  list.appendChild(t);
+}
+
+function openDlg(m,label){
+  target=m; $("dt").textContent=label+" · "+fmt(dateOf(giorno),{weekday:"short",day:"numeric",month:"short"});
+  $("nome").value=LS("vm_nome")||""; $("dlg").showModal(); $("nome").focus();
+}
+$("no").onclick=()=>$("dlg").close();
+$("si").onclick=salva;
+$("nome").addEventListener("keydown",e=>{if(e.key==="Enter")salva()});
+
+function salva(){
+  const nome=$("nome").value.trim().replace(/\s+/g," ");
+  if(!nome){toast("Scrivi il tuo nome");return}
+  const gia=Object.values(((data[dk(giorno)]||{})[target])||{}).some(v=>(v.nome||"").toLowerCase()===nome.toLowerCase());
+  if(gia){toast("Sei già in elenco");return}
+  LS("vm_nome",nome);
+  const r=root.child(dk(giorno)).child(target).push();
+  r.set({nome,ts:firebase.database.ServerValue.TIMESTAMP}).then(()=>{
+    mine.add(r.key); LS("vm_mine",JSON.stringify([...mine])); $("dlg").close(); toast("Nome aggiunto");
+  }).catch(()=>toast("Errore: controlla le regole del database"));
+}
+function rimuovi(m,id){
+  root.child(dk(giorno)).child(m).child(id).remove().then(()=>{mine.delete(id);LS("vm_mine",JSON.stringify([...mine]));toast("Nome tolto")});
+}
+
+function vaiSett(n){wk.setDate(wk.getDate()+7*n);render()}
+$("pv").onclick=()=>vaiSett(-1);
+$("nx").onclick=()=>vaiSett(1);
+$("td").onclick=()=>{wk=monday(new Date());const d=new Date().getDay();if(d>=1&&d<=5){giorno=GIORNI[d-1][0];LS("vm_giorno",giorno)}render()};
+root.on("value",s=>{data=s.val()||{};render()},()=>toast("Connessione al database non riuscita"));
+render();
+</script>
+</body>
+</html>
